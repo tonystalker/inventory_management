@@ -29,6 +29,11 @@ else:
 
 from app.middleware import RateLimitMiddleware
 
+# Apply IP-based Rate Limiting (100 requests per 60 seconds sliding window)
+app.add_middleware(RateLimitMiddleware, limit=100, window=60)
+
+# CORS Configuration — Load allowed domains dynamically from environment variables
+# CORSMiddleware must be registered last (outermost) to cleanly answer preflight OPTIONS requests first
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -36,9 +41,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Apply IP-based Rate Limiting (100 requests per 60 seconds sliding window)
-app.add_middleware(RateLimitMiddleware, limit=100, window=60)
 
 register_exception_handlers(app)
 

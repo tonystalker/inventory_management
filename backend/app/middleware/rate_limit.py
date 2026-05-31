@@ -18,8 +18,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.lock = threading.Lock()
 
     async def dispatch(self, request: Request, call_next) -> Response:
-        # Exclude internal health checks or swagger documentation if needed
-        if request.url.path in ["/health", "/docs", "/openapi.json", "/redoc"]:
+        # Exclude preflight CORS OPTIONS requests, internal health checks, and swagger documentation
+        if request.method == "OPTIONS" or request.url.path in ["/health", "/docs", "/openapi.json", "/redoc"]:
             return await call_next(request)
 
         # Get client IP
