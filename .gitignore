@@ -1,0 +1,25 @@
+# Dependency folders
+node_modules/
+dist/
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Private environment configurations
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE and OS cache files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+.pytest_cache/
