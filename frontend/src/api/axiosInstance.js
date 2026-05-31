@@ -10,9 +10,11 @@ api.interceptors.request.use((config) => {
   if (config.url) {
     const basePaths = ["products", "customers", "orders", "dashboard"];
     const urlLower = config.url.toLowerCase().trim();
+    // Strip any leading slash to match correctly (e.g., "/products" -> "products")
+    const cleanUrl = urlLower.replace(/^\//, "");
     
     // Check if the request URL is exactly one of the base paths or starts with it followed by query params
-    const isBase = basePaths.some(path => urlLower === path || urlLower.startsWith(path + "?"));
+    const isBase = basePaths.some(path => cleanUrl === path || cleanUrl.startsWith(path + "?"));
     
     if (isBase) {
       const [path, query] = config.url.split("?");
