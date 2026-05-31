@@ -17,6 +17,7 @@ class DashboardStats(BaseModel):
     low_stock_products: List[ProductResponse]
 
 @router.get("/", response_model=DashboardStats)
+@router.get("", response_model=DashboardStats)
 def get_dashboard(db: Session = Depends(get_db)):
     product_repo  = ProductRepository(db)
     customer_repo = CustomerRepository(db)

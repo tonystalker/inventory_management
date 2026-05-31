@@ -12,10 +12,12 @@ def get_service(db: Session = Depends(get_db)) -> ProductService:
     return ProductService(ProductRepository(db))
 
 @router.post("/", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
 def create_product(data: ProductCreate, svc: ProductService = Depends(get_service)):
     return svc.create(data)
 
 @router.get("/", response_model=List[ProductResponse])
+@router.get("", response_model=List[ProductResponse])
 def list_products(svc: ProductService = Depends(get_service)):
     return svc.get_all()
 

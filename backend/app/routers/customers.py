@@ -12,10 +12,12 @@ def get_service(db: Session = Depends(get_db)) -> CustomerService:
     return CustomerService(CustomerRepository(db))
 
 @router.post("/", response_model=CustomerResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=CustomerResponse, status_code=status.HTTP_201_CREATED)
 def create_customer(data: CustomerCreate, svc: CustomerService = Depends(get_service)):
     return svc.create(data)
 
 @router.get("/", response_model=List[CustomerResponse])
+@router.get("", response_model=List[CustomerResponse])
 def list_customers(svc: CustomerService = Depends(get_service)):
     return svc.get_all()
 

@@ -20,10 +20,12 @@ def get_service(db: Session = Depends(get_db)) -> OrderService:
     )
 
 @router.post("/", response_model=OrderResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=OrderResponse, status_code=status.HTTP_201_CREATED)
 def create_order(data: OrderCreate, svc: OrderService = Depends(get_service)):
     return svc.create(data)
 
 @router.get("/", response_model=List[OrderResponse])
+@router.get("", response_model=List[OrderResponse])
 def list_orders(svc: OrderService = Depends(get_service)):
     return svc.get_all()
 
