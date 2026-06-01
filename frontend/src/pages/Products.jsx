@@ -236,7 +236,7 @@ export default function Products() {
       {/* Main List */}
       {viewMode === "table" ? (
         /* --- Table View --- */
-        <div className="overflow-hidden rounded-2xl border bg-white shadow-sm">
+        <div className="overflow-x-auto overflow-y-hidden rounded-2xl border bg-white shadow-sm">
           <table className="w-full text-sm">
             <thead className="bg-[#1c304a] text-white">
               <tr>
