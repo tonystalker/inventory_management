@@ -56,6 +56,16 @@ erDiagram
         datetime created_at
     }
 
+    ADDRESSES {
+        int id PK
+        int customer_id FK
+        string address_line
+        string city
+        string state
+        string pincode
+        datetime created_at
+    }
+
     PRODUCTS {
         int id PK
         string name
@@ -71,6 +81,7 @@ erDiagram
     ORDERS {
         int id PK
         int customer_id FK
+        string shipping_address
         decimal total_amount
         string status
         datetime created_at
@@ -85,6 +96,7 @@ erDiagram
         decimal price_at_purchase
     }
 
+    CUSTOMERS ||--o{ ADDRESSES : "has"
     CUSTOMERS ||--o{ ORDERS : "places"
     ORDERS ||--|{ ORDER_ITEMS : "contains"
     PRODUCTS ||--o{ ORDER_ITEMS : "is part of"
@@ -160,6 +172,14 @@ npm run dev
 | **POST** | `/customers/` | Registers a new customer. |
 | **PUT** | `/customers/{id}` | Updates customer information. |
 | **DELETE** | `/customers/{id}` | Deletes a customer profile. |
+
+### 📍 Addresses
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| **GET** | `/customers/{id}/addresses` | Lists all addresses for a specific customer. |
+| **POST** | `/customers/{id}/addresses` | Creates a new saved address for a customer. |
+| **PUT** | `/addresses/{id}` | Updates an existing address. |
+| **DELETE** | `/addresses/{id}` | Deletes a saved address. |
 
 ### 🛒 Orders
 | Method | Endpoint | Description |

@@ -12,11 +12,13 @@ from app.models.order_status import OrderStatus, VALID_TRANSITIONS, STATUS_LABEL
 router = APIRouter(prefix="/orders", tags=["Orders"])
 
 def get_service(db: Session = Depends(get_db)) -> OrderService:
+    from app.repositories.address_repository import AddressRepository
     return OrderService(
         db=db,
         order_repo=OrderRepository(db),
         product_repo=ProductRepository(db),
         customer_repo=CustomerRepository(db),
+        address_repo=AddressRepository(db),
     )
 
 @router.post("/", response_model=OrderResponse, status_code=status.HTTP_201_CREATED)

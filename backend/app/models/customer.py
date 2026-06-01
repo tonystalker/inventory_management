@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, DateTime, func
+from sqlalchemy.orm import relationship
 from app.database import Base
 
 class Customer(Base):
@@ -11,3 +12,5 @@ class Customer(Base):
     country    = Column(String(100), nullable=False, default="🇺🇸 USA")
     gender     = Column(String(50), nullable=False, default="Male")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    addresses  = relationship("Address", back_populates="customer", cascade="all, delete-orphan")

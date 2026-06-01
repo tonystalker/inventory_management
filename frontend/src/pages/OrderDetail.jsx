@@ -95,6 +95,7 @@ export default function OrderDetail() {
         <h2 className="mb-3 text-sm font-semibold text-gray-600 uppercase tracking-wide">Details</h2>
         <p><span className="font-medium text-gray-700">Customer ID:</span> {order.customer_id}</p>
         <p><span className="font-medium text-gray-700">Status:</span> {order.status_label}</p>
+        <p><span className="font-medium text-gray-700">Shipping Address:</span> {order.shipping_address}</p>
       </div>
 
       {/* Line Items */}

@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import Base, engine
-from app.routers import products, customers, orders, dashboard
+from app.routers import products, customers, orders, dashboard, addresses
 from app.exceptions.handlers import register_exception_handlers
 import app.models  # noqa: F401 — ensure all models are imported before create_all
 
-# Create tables (use Alembic for migrations in production)
+# Create tables
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -15,7 +15,7 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# CORS Configuration — Load allowed domains dynamically from environment variables
+# Setup CORS
 import os
 
 allowed_origins_raw = os.getenv("ALLOWED_ORIGINS", "")
@@ -25,7 +25,7 @@ origins = [
     "http://127.0.0.1:5173",
 ]
 if allowed_origins_raw:
-    # Automatically strip leading/trailing whitespace and trailing slashes to prevent browser CORS mismatches
+    # Clean up origins
     origins.extend([origin.strip().rstrip("/") for origin in allowed_origins_raw.split(",") if origin.strip()])
 
 # Remove duplicates
@@ -33,11 +33,10 @@ origins = list(set(origins))
 
 from app.middleware import RateLimitMiddleware
 
-# Apply IP-based Rate Limiting (100 requests per 60 seconds sliding window)
+# Apply Rate Limiting
 app.add_middleware(RateLimitMiddleware, limit=100, window=60)
 
-# CORS Configuration — Load allowed domains dynamically from environment variables
-# CORSMiddleware must be registered last (outermost) to cleanly answer preflight OPTIONS requests first
+# Register CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -50,6 +49,7 @@ register_exception_handlers(app)
 
 app.include_router(products.router)
 app.include_router(customers.router)
+app.include_router(addresses.router)
 app.include_router(orders.router)
 app.include_router(dashboard.router)
 

@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.repositories.order_repository import OrderRepository
 from app.repositories.product_repository import ProductRepository
 from app.repositories.customer_repository import CustomerRepository
+from app.repositories.address_repository import AddressRepository
 from app.models.order import Order
 from app.models.order_item import OrderItem
 from app.models.order_status import OrderStatus
@@ -12,13 +13,7 @@ from app.exceptions import NotFoundError, InsufficientStockError, InvalidTransit
 
 class OrderService:
     """
-    Orchestrates the full order placement lifecycle:
-      1. Validate customer exists
-      2. For each item: validate product, check stock
-      3. Deduct stock atomically
-      4. Snapshot price_at_purchase
-      5. Calculate total_amount
-      6. Persist order + items in a single transaction
+    Handles the order placement lifecycle.
     """
 
     def __init__(
@@ -27,12 +22,14 @@ class OrderService:
         order_repo: OrderRepository,
         product_repo: ProductRepository,
         customer_repo: CustomerRepository,
+        address_repo: AddressRepository,
     ):
         self._db            = db
         self._order_repo    = order_repo
         self._product_repo  = product_repo
         self._customer_repo = customer_repo
-        self._status_svc    = OrderStatusService()   # pure — no DB
+        self._address_repo  = address_repo
+        self._status_svc    = OrderStatusService()
 
     def get_all(self) -> List[Order]:
         return self._order_repo.get_all()
@@ -47,6 +44,12 @@ class OrderService:
         customer = self._customer_repo.get_by_id(data.customer_id)
         if not customer:
             raise NotFoundError("Customer", data.customer_id)
+
+        address = self._address_repo.get_by_id(data.shipping_address_id)
+        if not address or address.customer_id != data.customer_id:
+            raise NotFoundError("Address for Customer", data.shipping_address_id)
+
+        shipping_address_snapshot = f"{address.address_line}, {address.city}, {address.state} - {address.pincode}"
 
         try:
             total_amount = 0.0
@@ -78,10 +81,11 @@ class OrderService:
                 ))
 
             order = Order(
-                customer_id  = data.customer_id,
-                total_amount = round(total_amount, 2),
-                status       = OrderStatus.PLACED,     # always starts as PLACED
-                items        = order_items,
+                customer_id      = data.customer_id,
+                shipping_address = shipping_address_snapshot,
+                total_amount     = round(total_amount, 2),
+                status           = OrderStatus.PLACED,
+                items            = order_items,
             )
             self._order_repo.create(order)
             self._db.commit()
@@ -93,17 +97,12 @@ class OrderService:
             raise
 
     def update_status(self, id: int, new_status: OrderStatus) -> Order:
-        """
-        Validates transition, applies it, and handles side effects
-        (stock restoration on cancellation).
-        """
+        """ Update order status safely """
         order = self.get_by_id(id)
 
-        # Validate transition — raises InvalidTransitionError if illegal
         self._status_svc.validate_transition(order.status, new_status)
 
         try:
-            # Side effect: restore stock only when cancelling
             if new_status == OrderStatus.CANCELLED:
                 self._restore_stock(order)
 
@@ -117,13 +116,8 @@ class OrderService:
             raise
 
     def delete(self, id: int) -> None:
-        """
-        Hard delete — only allowed from terminal states or for admin use.
-        For cancellation from UI, call update_status(id, CANCELLED) instead.
-        """
         order = self.get_by_id(id)
         if not self._status_svc.is_terminal(order.status):
-            # Auto-cancel first if not terminal
             self._status_svc.validate_transition(order.status, OrderStatus.CANCELLED)
             self._restore_stock(order)
         if not self._order_repo.delete(id):
@@ -131,7 +125,7 @@ class OrderService:
         self._db.commit()
 
     def _restore_stock(self, order: Order) -> None:
-        """Private helper — restores product quantities when order is cancelled."""
+        """ Restore stock on cancellation """
         for item in order.items:
             product = self._product_repo.get_by_id(item.product_id)
             if product:

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { orderService }   from "../api/orderService";
+import { addressService } from "../api/addressService";
 import { useApp } from "../context/AppContext";
 import Modal from "../components/Modal";
 import StatusBadge from "../components/StatusBadge";
@@ -22,12 +23,21 @@ export default function Orders() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [loadingModal, setLoadingModal] = useState(false);
 
+  // Address state
+  const [addresses, setAddresses] = useState([]);
+  const [shippingAddressId, setShippingAddressId] = useState("");
+  const [showAddAddress, setShowAddAddress] = useState(false);
+  const [newAddress, setNewAddress] = useState({ address_line: "", city: "", state: "", pincode: "" });
+
   const filteredOrders = filterStatus === "all"
     ? orders
     : orders.filter((o) => o.status === filterStatus);
 
   const loadModalData = () => {
     setLoadingModal(true);
+    setCustomerId("");
+    setShippingAddressId("");
+    setAddresses([]);
     Promise.all([
       loadProducts(products.length > 0),
       loadCustomers(customers.length > 0),
@@ -35,6 +45,35 @@ export default function Orders() {
   };
 
   useEffect(() => { loadOrders(orders.length > 0); }, []);
+
+  const handleCustomerChange = async (cid) => {
+    setCustomerId(cid);
+    setShippingAddressId("");
+    if (!cid) {
+      setAddresses([]);
+      return;
+    }
+    try {
+      const data = await addressService.getByCustomer(cid);
+      setAddresses(data);
+      if (data.length > 0) setShippingAddressId(data[0].id);
+    } catch (err) {
+      toast.error("Failed to load addresses");
+    }
+  };
+
+  const handleAddAddress = async () => {
+    try {
+      const added = await addressService.create(customerId, newAddress);
+      setAddresses([...addresses, added]);
+      setShippingAddressId(added.id);
+      setShowAddAddress(false);
+      setNewAddress({ address_line: "", city: "", state: "", pincode: "" });
+      toast.success("Address added");
+    } catch (err) {
+      toast.error(err.response?.data?.detail || err.message);
+    }
+  };
 
   const addItem = () => setItems([...items, { product_id: "", quantity: 1 }]);
   const updateItem = (i, field, val) => {
@@ -45,9 +84,14 @@ export default function Orders() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!shippingAddressId) {
+      toast.error("Please select a shipping address");
+      return;
+    }
     try {
       await orderService.create({
         customer_id: parseInt(customerId),
+        shipping_address_id: parseInt(shippingAddressId),
         items: items.map((item) => ({
           product_id: parseInt(item.product_id),
           quantity:   parseInt(item.quantity),
@@ -57,6 +101,7 @@ export default function Orders() {
       setShowModal(false);
       setItems([{ product_id: "", quantity: 1 }]);
       setCustomerId("");
+      setShippingAddressId("");
       loadOrders(true); // Silent reload
     } catch (err) {
       toast.error(err.message);
@@ -166,7 +211,7 @@ export default function Orders() {
                 <select
                   required
                   value={customerId}
-                  onChange={(e) => setCustomerId(e.target.value)}
+                  onChange={(e) => handleCustomerChange(e.target.value)}
                   className="w-full rounded-lg border px-3 py-2 text-sm"
                 >
                   <option value="">— Select customer —</option>
@@ -175,6 +220,70 @@ export default function Orders() {
                   ))}
                 </select>
               </div>
+
+              {/* Address Selection */}
+              {customerId && (
+                <div className="space-y-2 rounded-lg bg-gray-50 p-3 border">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-gray-700">Shipping Address</label>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddAddress(!showAddAddress)}
+                      className="text-xs font-semibold text-purple-600 hover:underline"
+                    >
+                      {showAddAddress ? "Cancel" : "+ Add New"}
+                    </button>
+                  </div>
+
+                  {showAddAddress ? (
+                    <div className="space-y-2 pt-2 border-t border-gray-200">
+                      <input
+                        type="text" placeholder="Address Line (e.g. 123 Main St)" required
+                        value={newAddress.address_line} onChange={(e) => setNewAddress({...newAddress, address_line: e.target.value})}
+                        className="w-full rounded border px-2 py-1 text-sm"
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="text" placeholder="City" required
+                          value={newAddress.city} onChange={(e) => setNewAddress({...newAddress, city: e.target.value})}
+                          className="rounded border px-2 py-1 text-sm"
+                        />
+                        <input
+                          type="text" placeholder="State" required
+                          value={newAddress.state} onChange={(e) => setNewAddress({...newAddress, state: e.target.value})}
+                          className="rounded border px-2 py-1 text-sm"
+                        />
+                      </div>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="text" placeholder="Pincode (Numbers Only)" required pattern="[0-9]+"
+                          value={newAddress.pincode} onChange={(e) => setNewAddress({...newAddress, pincode: e.target.value})}
+                          className="flex-1 rounded border px-2 py-1 text-sm"
+                        />
+                        <button type="button" onClick={handleAddAddress} className="rounded bg-gray-800 text-white px-3 py-1 text-xs font-bold">
+                          Save
+                        </button>
+                      </div>
+                    </div>
+                  ) : addresses.length > 0 ? (
+                    <select
+                      required
+                      value={shippingAddressId}
+                      onChange={(e) => setShippingAddressId(e.target.value)}
+                      className="w-full rounded border px-2 py-1 text-sm bg-white"
+                    >
+                      <option value="">— Select an address —</option>
+                      {addresses.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.address_line}, {a.city}, {a.state} - {a.pincode}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="text-xs text-red-500 font-medium">No addresses found. Please add one.</p>
+                  )}
+                </div>
+              )}
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">Products</label>

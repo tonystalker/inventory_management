@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { customerService } from "../api/customerService";
+import { addressService } from "../api/addressService";
 import { useApp } from "../context/AppContext";
 import Modal from "../components/Modal";
 import toast from "react-hot-toast";
@@ -8,7 +9,6 @@ const emptyForm = { name: "", email: "", phone: "", country: "🇺🇸 USA", gen
 
 const GENDERS = ["Male", "Female", "Other"];
 
-// Gender to Emoji Helper
 const GENDER_EMOJIS = {
   "Male": "🧔",
   "Female": "👩",
@@ -23,6 +23,8 @@ export default function Customers() {
   // Detail Modal State
   const [detailCustomer, setDetailCustomer] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showAddAddress, setShowAddAddress] = useState(false);
+  const [newAddress, setNewAddress] = useState({ address_line: "", city: "", state: "", pincode: "" });
 
   useEffect(() => {
     loadCustomers(customers.length > 0);
@@ -56,9 +58,40 @@ export default function Customers() {
   const handleOpenDetail = (c) => {
     setDetailCustomer(c);
     setShowDetailModal(true);
+    setShowAddAddress(false);
+    setNewAddress({ address_line: "", city: "", state: "", pincode: "" });
   };
 
-  // Calculate distinct customer bought items quantity from orders
+  const handleAddAddress = async (e) => {
+    e.preventDefault();
+    try {
+      const added = await addressService.create(detailCustomer.id, newAddress);
+      toast.success("Address added");
+      setDetailCustomer({ ...detailCustomer, addresses: [...detailCustomer.addresses, added] });
+      setShowAddAddress(false);
+      setNewAddress({ address_line: "", city: "", state: "", pincode: "" });
+      loadCustomers(true); // reload behind the scenes to keep main list in sync
+    } catch (err) {
+      toast.error(err.response?.data?.detail || err.message);
+    }
+  };
+
+  const handleDeleteAddress = async (addrId) => {
+    if (!window.confirm("Delete this address?")) return;
+    try {
+      await addressService.remove(addrId);
+      toast.success("Address deleted");
+      setDetailCustomer({ 
+        ...detailCustomer, 
+        addresses: detailCustomer.addresses.filter(a => a.id !== addrId) 
+      });
+      loadCustomers(true); // reload behind the scenes
+    } catch (err) {
+      toast.error(err.response?.data?.detail || err.message);
+    }
+  };
+
+  // Get customer stats
   const getCustomerStats = (cid) => {
     const activeOrders = orders.filter((o) => o.status !== "cancelled" && o.customer_id === cid);
     let totalBought = 0;
@@ -135,16 +168,14 @@ export default function Customers() {
         </table>
       </div>
 
-      {/* Customer Details Modal (Image 3 inspired, no birth date or local uploader photo) */}
+      {/* Detail Modal */}
       {showDetailModal && detailCustomer && (() => {
         const stats = getCustomerStats(detailCustomer.id);
         const isLoyal = stats.totalBought > 20;
         return (
           <Modal title="Customer Profile" onClose={() => setShowDetailModal(false)}>
             <div className="space-y-6">
-              {/* Profile header */}
               <div className="flex items-center gap-5 border-b pb-4">
-                {/* Profile Icon avatar representation */}
                 <div className="h-16 w-16 md:h-20 md:w-20 bg-slate-50 border rounded-2xl flex items-center justify-center text-4xl shadow-inner select-none shrink-0">
                   {GENDER_EMOJIS[detailCustomer.gender] || "👤"}
                 </div>
@@ -177,7 +208,73 @@ export default function Customers() {
                 </div>
               </div>
 
-              <div className="flex justify-end pt-2 border-t">
+              {/* Addresses Section */}
+              <div className="pt-2 border-t">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">Saved Addresses</h3>
+                  <button 
+                    onClick={() => setShowAddAddress(!showAddAddress)}
+                    className="text-xs font-bold text-[#1c304a] hover:underline"
+                  >
+                    {showAddAddress ? "Cancel" : "+ Add Address"}
+                  </button>
+                </div>
+
+                {showAddAddress && (
+                  <form onSubmit={handleAddAddress} className="mb-4 space-y-3 rounded-xl border bg-gray-50 p-4">
+                    <input
+                      type="text" placeholder="Address Line (e.g. 123 Main St)" required
+                      value={newAddress.address_line} onChange={(e) => setNewAddress({...newAddress, address_line: e.target.value})}
+                      className="w-full rounded-lg border px-3 py-2 text-sm"
+                    />
+                    <div className="grid grid-cols-2 gap-3">
+                      <input
+                        type="text" placeholder="City" required
+                        value={newAddress.city} onChange={(e) => setNewAddress({...newAddress, city: e.target.value})}
+                        className="w-full rounded-lg border px-3 py-2 text-sm"
+                      />
+                      <input
+                        type="text" placeholder="State" required
+                        value={newAddress.state} onChange={(e) => setNewAddress({...newAddress, state: e.target.value})}
+                        className="w-full rounded-lg border px-3 py-2 text-sm"
+                      />
+                    </div>
+                    <div className="flex gap-3 items-center">
+                      <input
+                        type="text" placeholder="Pincode (Numbers Only)" required pattern="[0-9]+"
+                        value={newAddress.pincode} onChange={(e) => setNewAddress({...newAddress, pincode: e.target.value})}
+                        className="flex-1 rounded-lg border px-3 py-2 text-sm"
+                      />
+                      <button type="submit" className="rounded-lg bg-[#1c304a] text-white px-4 py-2 text-sm font-bold hover:bg-[#253f5f]">
+                        Save Address
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {detailCustomer.addresses?.length > 0 ? (
+                    detailCustomer.addresses.map((a) => (
+                      <div key={a.id} className="flex items-center justify-between p-3 rounded-xl border bg-white shadow-sm">
+                        <div className="text-sm">
+                          <p className="font-semibold text-slate-800">{a.address_line}</p>
+                          <p className="text-gray-500 text-xs">{a.city}, {a.state} - {a.pincode}</p>
+                        </div>
+                        <button 
+                          onClick={() => handleDeleteAddress(a.id)}
+                          className="text-red-500 hover:text-red-700 text-xs font-bold"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-gray-500 italic py-2">No addresses saved yet.</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-4 border-t">
                 <button
                   onClick={() => setShowDetailModal(false)}
                   className="rounded-xl border border-gray-200 hover:bg-slate-50 px-5 py-2 text-xs font-bold text-gray-600 transition"

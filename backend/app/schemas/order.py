@@ -8,8 +8,9 @@ class OrderItemCreate(BaseModel):
     quantity:   int = Field(..., gt=0)
 
 class OrderCreate(BaseModel):
-    customer_id: int                   = Field(..., gt=0)
-    items:       List[OrderItemCreate] = Field(..., min_length=1)
+    customer_id:         int                   = Field(..., gt=0)
+    shipping_address_id: int                   = Field(..., gt=0)
+    items:               List[OrderItemCreate] = Field(..., min_length=1)
 
 class OrderStatusUpdate(BaseModel):
     status: OrderStatus
@@ -22,14 +23,15 @@ class OrderItemResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 class OrderResponse(BaseModel):
-    id:            int
-    customer_id:   int
-    total_amount:  float
-    status:        OrderStatus
-    status_label:  str             = ""   # human-readable e.g. "Picked & Packed"
-    created_at:    datetime
-    updated_at:    Optional[datetime] = None
-    items:         List[OrderItemResponse] = []
+    id:               int
+    customer_id:      int
+    shipping_address: str
+    total_amount:     float
+    status:           OrderStatus
+    status_label:     str             = ""   # human-readable e.g. "Picked & Packed"
+    created_at:       datetime
+    updated_at:       Optional[datetime] = None
+    items:            List[OrderItemResponse] = []
 
     model_config = {"from_attributes": True}
 
