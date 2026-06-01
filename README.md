@@ -135,17 +135,41 @@ npm install
 npm run dev
 ```
 
-## API Reference
+## Detailed API Endpoints
 
+### 🩺 System & Dashboard
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/health` | Health check |
-| GET | `/dashboard` | Stats + low stock |
-| POST/GET/PUT/DELETE | `/products` | Product CRUD |
-| POST/GET/DELETE | `/customers` | Customer CRUD |
-| POST/GET/DELETE | `/orders` | Order management |
+| **GET** | `/health` | Returns the health status of the backend server. |
+| **GET** | `/dashboard/stats` | Retrieves high-level business metrics (total sales, revenue, low stock alerts). |
 
-Full interactive docs: **http://localhost:8000/docs**
+### 📦 Products
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| **GET** | `/products/` | Lists all products in the inventory. |
+| **GET** | `/products/{id}` | Retrieves detailed information for a specific product. |
+| **POST** | `/products/` | Creates a new product in the inventory. |
+| **PUT** | `/products/{id}` | Updates an existing product's details or stock. |
+| **DELETE** | `/products/{id}` | Deletes a product from the database. |
+
+### 👥 Customers
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| **GET** | `/customers/` | Lists all registered customers. |
+| **GET** | `/customers/{id}` | Retrieves a specific customer's profile. |
+| **POST** | `/customers/` | Registers a new customer. |
+| **PUT** | `/customers/{id}` | Updates customer information. |
+| **DELETE** | `/customers/{id}` | Deletes a customer profile. |
+
+### 🛒 Orders
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| **GET** | `/orders/` | Lists all orders along with their current status. |
+| **GET** | `/orders/{id}` | Retrieves a specific order and its purchased items. |
+| **POST** | `/orders/` | Creates a new order (automatically locks in product purchase prices). |
+| **DELETE** | `/orders/{id}` | Cancels/Deletes an order. |
+
+**Interactive Docs:** You can test all of these endpoints directly using the auto-generated Swagger UI at `https://inventory-management-tb9u.onrender.com/docs` or `http://localhost:8000/docs` locally!
 
 ## Deployment
 
