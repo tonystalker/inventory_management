@@ -152,6 +152,17 @@ Full interactive docs: **http://localhost:8000/docs**
 - **Backend** → Hosted on [Render](https://render.com) at `https://inventory-management-tb9u.onrender.com`
 - **Frontend** → Hosted on [Vercel](https://vercel.com) at `https://inventory-management-virid-nine.vercel.app`
 
+## Security, Reliability & Rate Limiting
+
+We have integrated several industry best practices to ensure the API is error-free, resilient to attacks, and immune to abuse:
+
+- **Error-Free Execution (Global Exception Handling):** A centralized exception handler intercepts all database and business logic errors (like `ItemNotFound`, `ValidationError`), preventing the application from crashing. It automatically formats these exceptions into clean, uniform HTTP JSON responses for the frontend.
+- **Attack Prevention (SQL Injection & XSS):** 
+  - We strictly use **SQLAlchemy ORM**, which parametrizes all database queries natively, completely eliminating the risk of SQL injection.
+  - The React frontend escapes all text inputs automatically to prevent Cross-Site Scripting (XSS).
+- **Rate Limiting (DDoS & Spam Protection):** A custom `RateLimitMiddleware` enforces a strict threshold of **100 requests per 60 seconds** per IP address using a sliding window algorithm. This prevents automated scripts or malicious actors from spamming or bringing down the server.
+- **CORS Hardening:** Cross-Origin Resource Sharing (CORS) is strictly configured to only allow requests from the exact Vercel frontend URL, preventing third-party websites from making unauthorized API calls on behalf of users.
+
 ## SOLID Principles
 
 | Principle | Implementation |
