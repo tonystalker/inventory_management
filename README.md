@@ -2,11 +2,64 @@
 
 A full-stack Inventory & Order Management System built with **FastAPI**, **PostgreSQL**, **React**, and **Docker**.
 
+## Live Demo
+
+- **Frontend Application**: [https://inventory-management-virid-nine.vercel.app](https://inventory-management-virid-nine.vercel.app)
+- **Backend API**: [https://inventory-management-tb9u.onrender.com](https://inventory-management-tb9u.onrender.com)
+
 ## Architecture
 
 ```
 3-Tier Layered Architecture (SOLID principles)
 Router → Service → Repository → Database
+```
+
+## Database Schema (ER Diagram)
+
+```mermaid
+erDiagram
+    CUSTOMERS {
+        int id PK
+        string name
+        string email UK
+        string phone
+        string country
+        string gender
+        datetime created_at
+    }
+
+    PRODUCTS {
+        int id PK
+        string name
+        string sku UK
+        decimal price
+        int quantity
+        string category
+        string segment
+        text description
+        datetime created_at
+    }
+
+    ORDERS {
+        int id PK
+        int customer_id FK
+        decimal total_amount
+        string status
+        datetime created_at
+        datetime updated_at
+    }
+
+    ORDER_ITEMS {
+        int id PK
+        int order_id FK
+        int product_id FK
+        int quantity
+        decimal price_at_purchase
+    }
+
+    CUSTOMERS ||--o{ ORDERS : "places"
+    ORDERS ||--|{ ORDER_ITEMS : "contains"
+    PRODUCTS ||--o{ ORDER_ITEMS : "is part of"
 ```
 
 ## Quick Start (Docker)
@@ -68,8 +121,8 @@ Full interactive docs: **http://localhost:8000/docs**
 
 ## Deployment
 
-- **Backend** → [Render](https://render.com) (Web Service, Python 3, root dir: `backend`)
-- **Frontend** → [Vercel](https://vercel.com) (root dir: `frontend`, set `VITE_API_BASE_URL`)
+- **Backend** → Hosted on [Render](https://render.com) at `https://inventory-management-tb9u.onrender.com`
+- **Frontend** → Hosted on [Vercel](https://vercel.com) at `https://inventory-management-virid-nine.vercel.app`
 
 ## SOLID Principles
 
