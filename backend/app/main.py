@@ -19,14 +19,17 @@ app = FastAPI(
 import os
 
 allowed_origins_raw = os.getenv("ALLOWED_ORIGINS", "")
+origins = [
+    "https://inventory-management-virid-nine.vercel.app",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
 if allowed_origins_raw:
     # Automatically strip leading/trailing whitespace and trailing slashes to prevent browser CORS mismatches
-    origins = [origin.strip().rstrip("/") for origin in allowed_origins_raw.split(",") if origin.strip()]
-else:
-    origins = ["https://inventory-management-virid-nine.vercel.app",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ]
+    origins.extend([origin.strip().rstrip("/") for origin in allowed_origins_raw.split(",") if origin.strip()])
+
+# Remove duplicates
+origins = list(set(origins))
 
 from app.middleware import RateLimitMiddleware
 
