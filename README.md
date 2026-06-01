@@ -7,11 +7,39 @@ A full-stack Inventory & Order Management System built with **FastAPI**, **Postg
 - **Frontend Application**: [https://inventory-management-virid-nine.vercel.app](https://inventory-management-virid-nine.vercel.app)
 - **Backend API**: [https://inventory-management-tb9u.onrender.com](https://inventory-management-tb9u.onrender.com)
 
-## Architecture
+## System Architecture
 
-```
-3-Tier Layered Architecture (SOLID principles)
-Router → Service → Repository → Database
+```mermaid
+flowchart TB
+    User((User))
+
+    subgraph "Frontend Layer (Vercel)"
+        React[React SPA]
+        Axios[Axios API Client]
+        React --> Axios
+    end
+
+    subgraph "Backend API Layer (Render)"
+        FastAPI[FastAPI]
+        
+        subgraph "Layered Architecture (SOLID)"
+            Router[Routers]
+            Service[Services]
+            Repo[Repositories]
+        end
+        
+        FastAPI --> Router
+        Router --> Service
+        Service --> Repo
+    end
+
+    subgraph "Data Layer (Render)"
+        Postgres[(PostgreSQL)]
+    end
+
+    User --> React
+    Axios -->|REST API| FastAPI
+    Repo -->|SQLAlchemy| Postgres
 ```
 
 ## Database Schema (ER Diagram)
